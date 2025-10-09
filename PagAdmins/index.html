@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Coordenadas Aleatorias - Colombia y Islas</title>
+  <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+  <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #eef2ef; }
+    #map { width: 100%; height: 90vh; border-radius: 10px; margin-top: 8px; }
+    #panel {
+      background: white; padding: 10px; margin: 10px;
+      border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+    }
+    button {
+      background-color: #00695c; color: white; border: none;
+      padding: 8px 14px; border-radius: 6px; cursor: pointer;
+    }
+    button:hover { background-color: #004d40; }
+    pre { background: #e8f5e9; padding: 8px; border-radius: 5px; }
+    .marker-label {
+      background-color: #2e7d32;
+      color: white;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      text-align: center;
+      line-height: 24px;
+      font-weight: bold;
+      border: 2px solid white;
+    }
+  </style>
+</head>
+<body>
+  <div id="panel">
+    <button id="generar">Generar 6 coordenadas aleatorias</button>
+    <pre id="output"></pre>
+  </div>
+  <div id="map"></div>
+
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1Ijoibm90ZWUwMDEiLCJhIjoiY21naWh5NHlpMDlpejJxcHU1Nm41b3RyaCJ9.PFvWLe45FTx6XXJqYcpq0A'; // ← Reemplaza con tu token de Mapbox
+
+    const map = new mapboxgl.Map({
+      container: 'map',
+      style: 'mapbox://styles/mapbox/streets-v12',
+      center: [-74, 4.5],
+      zoom: 4.5
+    });
+
+    // Cuatro zonas geográficas (2 continentales + 2 insulares)
+    const zonas = [
+      // Zona 1 - Sur y Oriente
+      [
+        [-69.94783, -4.22671],
+        [-79.25914, 1.07880],
+        [-77.63382, 9.12124],
+        [-70.82115, 12.55210]
+      ],
+      // Zona 2 - Centro y Oriente
+      [
+        [-72.02043, 7.03256],
+        [-67.27637, 6.34109],
+        [-66.84027, 1.21853],
+        [-69.82685, -4.13150]
+      ],
+      // Zona 3 - San Andrés
+      [
+        [-81.74912, 12.48359],
+        [-81.72282, 12.47914],
+        [-81.68144, 12.58151],
+        [-81.70178, 12.61299]
+      ],
+      // Zona 4 - Providencia
+      [
+        [-81.40236, 13.32037],
+        [-81.36602, 13.31578],
+        [-81.33161, 13.38948],
+        [-81.38683, 13.40564]
+      ]
+    ];
+
+    const marcadores = [];
+
+    function limpiarMarcadores() {
+      marcadores.forEach(m => m.remove());
+      marcadores.length = 0;
+    }
+
+    function generarCoordenadas() {
+      limpiarMarcadores();
+      const salida = [];
+
+      // Generar 6 coordenadas aleatorias (pueden ser de cualquier zona)
+      for (let i = 0; i < 6; i++) {
+        const zona = zonas[Math.floor(Math.random() * zonas.length)];
+
+        const lons = zona.map(p => p[0]);
+        const lats = zona.map(p => p[1]);
+        const minLon = Math.min(...lons);
+        const maxLon = Math.max(...lons);
+        const minLat = Math.min(...lats);
+        const maxLat = Math.max(...lats);
+
+        const lon = minLon + Math.random() * (maxLon - minLon);
+        const lat = minLat + Math.random() * (maxLat - minLat);
+
+        // Crear marcador con número
+        const el = document.createElement('div');
+        el.className = 'marker-label';
+        el.textContent = i + 1;
+
+        new mapboxgl.Marker(el).setLngLat([lon, lat]).addTo(map);
+        marcadores.push(el);
+
+        salida.push(`#${i + 1}: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`);
+      }
+
+      document.getElementById('output').textContent = salida.join("\n");
+
+      // Centrar el mapa (promedio de coordenadas)
+      const coords = salida.map(line => {
+        const [lat, lon] = line.match(/-?\d+\.\d+/g).map(Number);
+        return [lon, lat];
+      });
+      const avgLon = coords.reduce((s, c) => s + c[0], 0) / coords.length;
+      const avgLat = coords.reduce((s, c) => s + c[1], 0) / coords.length;
+      map.flyTo({ center: [avgLon, avgLat], zoom: 5 });
+    }
+
+    document.getElementById('generar').addEventListener('click', generarCoordenadas);
+  </script>
+</body>
+</html>
