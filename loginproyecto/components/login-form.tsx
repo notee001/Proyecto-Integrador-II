@@ -33,16 +33,64 @@ export function LoginForm({
     setError(null);
 
     try {
-      const { error, data } = await supabase.auth.signInWithPassword({
+      console.log('Iniciando proceso de login...');
+      
+      // Iniciar sesión
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
-      if (error) throw error;
       
-      // Redirigir a la página de administradores
-      window.location.href = "http://localhost:3001"; // Asegúrate de que esta es la URL correcta donde se ejecuta PagAdmins
+      console.log('Respuesta de signIn:', { data: signInData, error: signInError });
+      
+      if (signInError) {
+        console.error('Error en signIn:', signInError);
+        throw signInError;
+      }
+      
+      if (!signInData?.session) {
+        console.error('No hay sesión en la respuesta');
+        throw new Error("No se pudo iniciar sesión");
+      }
+
+      const userId = signInData.session.user.id;
+      console.log('ID de usuario:', userId);
+
+      // Verificar si el usuario es administrador
+      const { data: adminCheck, error: checkError } = await supabase
+        .from('usuarios')
+        .select('tipo')
+        .eq('id', userId)
+        .single();
+
+      console.log('Consulta de tipo de usuario:', { data: adminCheck, error: checkError });
+
+      if (checkError) {
+        console.error('Error al verificar tipo de usuario:', checkError);
+        throw checkError;
+      }
+
+      if (!adminCheck) {
+        console.error('No se encontró el usuario en la tabla usuarios');
+        throw new Error('Usuario no encontrado en el sistema');
+      }
+
+      console.log('Tipo de usuario:', adminCheck.tipo);
+
+      if (adminCheck.tipo !== 'admin') {
+        throw new Error('Acceso denegado: No tienes permisos de administrador');
+      }
+
+      // Redirigir a la página de administración con el token
+      const token = signInData.session.access_token;
+      console.log('Redirigiendo con token...');
+      window.location.href = `http://localhost:3001?token=${token}`;
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred");
+      console.error('Error completo:', error);
+      setError(error instanceof Error ? error.message : 
+        error && typeof error === 'object' && 'message' in error 
+          ? (error as { message: string }).message 
+          : "Error desconocido");
     } finally {
       setIsLoading(false);
     }
@@ -96,10 +144,7 @@ export function LoginForm({
             </div>
             <div className="mt-4 text-center text-sm">
               ¿No tienes una cuenta?{" "}
-              <Link
-                href="/auth/sign-up"
-                className="underline underline-offset-4"
-              >
+              <Link href="/auth/sign-up" className="underline underline-offset-4">
                 Regístrate
               </Link>
             </div>

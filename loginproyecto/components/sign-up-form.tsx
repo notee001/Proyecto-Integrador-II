@@ -39,18 +39,75 @@ export function SignUpForm({
       return;
     }
 
+    // Validar contraseña
+    if (password.length < 6) {
+      setError("La contraseña debe tener al menos 6 caracteres");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      const { error } = await supabase.auth.signUp({
+      setError('');
+      console.log('Iniciando proceso de registro...');
+
+      // 1. Realizar el registro en auth de manera más simple
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/protected`,
-        },
+          emailRedirectTo: `${window.location.origin}/auth/login`
+        }
       });
-      if (error) throw error;
+
+      // Log detallado del error si existe
+      if (signUpError) {
+        console.error('Error detallado del registro:', {
+          message: signUpError.message,
+          status: signUpError.status,
+          name: signUpError.name,
+          details: signUpError
+        });
+        
+        if (signUpError.message.includes('already registered')) {
+          throw new Error('Este correo electrónico ya está registrado');
+        } else {
+          // Log más detallado para diagnóstico
+          console.error('Error completo:', JSON.stringify(signUpError, null, 2));
+          throw new Error('Error durante el registro. Por favor, intenta más tarde');
+        }
+      }
+
+      if (!authData?.user) {
+        throw new Error('No se recibió la información del usuario');
+      }
+
+      console.log('Usuario creado exitosamente:', {
+        id: authData.user.id,
+        email: authData.user.email
+      });
+
+      // El trigger en Supabase manejará la creación en la tabla usuarios
+      console.log('Registro completado exitosamente');
       router.push("/auth/sign-up-success");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Ocurrió un error");
+      console.error('Error completo:', error);
+      let errorMessage = "Error al registrar el usuario";
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (error && typeof error === 'object') {
+        // Manejar errores específicos de Supabase
+        const supabaseError = error as any;
+        if (supabaseError.message) {
+          errorMessage = supabaseError.message;
+        } else if (supabaseError.error_description) {
+          errorMessage = supabaseError.error_description;
+        } else if (supabaseError.details) {
+          errorMessage = supabaseError.details;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

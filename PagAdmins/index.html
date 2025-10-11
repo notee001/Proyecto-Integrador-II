@@ -3,9 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Coordenadas Aleatorias - Colombia y Islas</title>
+  <title>Coordenadas Aleatorias - Verificación JWT</title>
+
+  <!-- Mapbox -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+
+  <!-- Supabase -->
+  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+
   <style>
     body { margin: 0; font-family: Arial, sans-serif; background: #eef2ef; }
     #map { width: 100%; height: 90vh; border-radius: 10px; margin-top: 8px; }
@@ -18,6 +24,7 @@
       padding: 8px 14px; border-radius: 6px; cursor: pointer;
     }
     button:hover { background-color: #004d40; }
+    button:disabled { background-color: #cccccc; cursor: not-allowed; }
     pre { background: #e8f5e9; padding: 8px; border-radius: 5px; }
     .marker-label {
       background-color: #2e7d32;
@@ -29,19 +36,121 @@
       line-height: 24px;
       font-weight: bold;
       border: 2px solid white;
+      cursor: pointer;
+    }
+    .marker-label.selected {
+      background-color: #d32f2f;
     }
   </style>
 </head>
 <body>
   <div id="panel">
-    <button id="generar">Generar 6 coordenadas aleatorias</button>
+    <div id="userInfo" style="margin-bottom: 10px; font-weight: bold;"></div>
+    <button id="generar" style="display: none;">Generar 6 coordenadas aleatorias</button>
+    <button id="saveButton" disabled style="display: none;">Guardar Coordenadas</button>
     <pre id="output"></pre>
   </div>
   <div id="map"></div>
 
   <script>
-    mapboxgl.accessToken = 'pk.eyJ1Ijoibm90ZWUwMDEiLCJhIjoiY21naWh5NHlpMDlpejJxcHU1Nm41b3RyaCJ9.PFvWLe45FTx6XXJqYcpq0A'; // ← Reemplaza con tu token de Mapbox
+    // --- CONFIGURACIÓN SUPABASE ---
+    const supabaseUrl = 'https://mukghsrmrtjfuesfiine.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11a2doc3JtcnRqZnVlc2ZpaW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MTc3NjEsImV4cCI6MjA3Mzk5Mzc2MX0.UHsI7kQG1qFDx5xrbH6nrSeNAmv7-tnDDjcgEt7Ylus';
+    const client = supabase.createClient(supabaseUrl, supabaseKey);
 
+    // --- FUNCIÓN PARA VERIFICAR TOKEN JWT CON SUPABASE ---
+    async function verificarToken(token) {
+      try {
+        console.log('Verificando token...');
+        const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "apikey": supabaseKey
+          }
+        });
+
+        if (!response.ok) {
+          console.error('Error en la respuesta:', response.status);
+          throw new Error("Token inválido o expirado");
+        }
+
+        const user = await response.json();
+        console.log('Usuario verificado:', user);
+        return user;
+      } catch (error) {
+        console.error('Error al verificar token:', error);
+        throw error;
+      }
+    }
+
+    // --- VERIFICAR USUARIO POR TOKEN ---
+    async function verificarUsuarioPorToken() {
+      const userInfoElement = document.getElementById('userInfo');
+      const generarButton = document.getElementById('generar');
+      const saveButton = document.getElementById('saveButton');
+      
+      try {
+        console.log('Iniciando verificación...');
+        const params = new URLSearchParams(window.location.search);
+        const token = params.get("token");
+        console.log('Token encontrado en URL:', token ? 'Sí' : 'No');
+        
+        if (!token) throw new Error("Token no encontrado en la URL");
+
+        // Crear cliente autenticado
+        const authenticatedClient = supabase.createClient(supabaseUrl, supabaseKey, {
+          auth: {
+            persistSession: false,
+            autoRefreshToken: false,
+            detectSessionInUrl: false
+          },
+          global: {
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }
+        });
+
+        // Obtener datos del usuario
+        const { data: { user }, error: userError } = await authenticatedClient.auth.getUser();
+        console.log("Respuesta de auth.getUser:", { user, error: userError });
+        
+        if (userError) throw userError;
+        if (!user) throw new Error("No se pudo obtener el usuario");
+
+        // Buscar rol en tabla usuarios usando el cliente autenticado
+        const { data: perfil, error } = await authenticatedClient
+          .from("usuarios")
+          .select("Correo, tipo")
+          .eq("id", user.id)
+          .single();
+        
+        console.log("Datos de perfil:", perfil, "Error:", error);
+
+        if (error) throw error;
+
+        if (perfil.tipo === "admin") {
+          userInfoElement.textContent = `✅ Bienvenido administrador (${perfil.Correo})`;
+          generarButton.style.display = "inline-block";
+          saveButton.style.display = "inline-block";
+        } else {
+          userInfoElement.textContent = `🚫 Acceso denegado (${perfil.tipo})`;
+          map.dragPan.disable();
+          map.scrollZoom.disable();
+          map.boxZoom.disable();
+          map.touchZoomRotate.disable();
+          setTimeout(() => window.location.href = "http://localhost:3000/auth/login", 2500);
+        }
+      } catch (err) {
+        console.error("Error al verificar usuario:", err);
+        document.getElementById("userInfo").textContent =
+          "⚠️ Sesión inválida o expirada. Redirigiendo...";
+        setTimeout(() => window.location.href = "http://localhost:3000/auth/login", 2000);
+      }
+    }
+
+    // --- MAPBOX CONFIG ---
+    mapboxgl.accessToken = 'pk.eyJ1Ijoibm90ZWUwMDEiLCJhIjoiY21naWh5NHlpMDlpejJxcHU1Nm41b3RyaCJ9.PFvWLe45FTx6XXJqYcpq0A';
     const map = new mapboxgl.Map({
       container: 'map',
       style: 'mapbox://styles/mapbox/streets-v12',
@@ -49,87 +158,80 @@
       zoom: 4.5
     });
 
-    // Cuatro zonas geográficas (2 continentales + 2 insulares)
+    map.on('load', verificarUsuarioPorToken);
+
+    // --- ZONAS GEOGRÁFICAS ---
     const zonas = [
-      // Zona 1 - Sur y Oriente
-      [
-        [-69.94783, -4.22671],
-        [-79.25914, 1.07880],
-        [-77.63382, 9.12124],
-        [-70.82115, 12.55210]
-      ],
-      // Zona 2 - Centro y Oriente
-      [
-        [-72.02043, 7.03256],
-        [-67.27637, 6.34109],
-        [-66.84027, 1.21853],
-        [-69.82685, -4.13150]
-      ],
-      // Zona 3 - San Andrés
-      [
-        [-81.74912, 12.48359],
-        [-81.72282, 12.47914],
-        [-81.68144, 12.58151],
-        [-81.70178, 12.61299]
-      ],
-      // Zona 4 - Providencia
-      [
-        [-81.40236, 13.32037],
-        [-81.36602, 13.31578],
-        [-81.33161, 13.38948],
-        [-81.38683, 13.40564]
-      ]
+      [[-69.94783, -4.22671], [-79.25914, 1.07880], [-77.63382, 9.12124], [-70.82115, 12.55210]],
+      [[-72.02043, 7.03256], [-67.27637, 6.34109], [-66.84027, 1.21853], [-69.82685, -4.13150]],
+      [[-81.74912, 12.48359], [-81.72282, 12.47914], [-81.68144, 12.58151], [-81.70178, 12.61299]],
+      [[-81.40236, 13.32037], [-81.36602, 13.31578], [-81.33161, 13.38948], [-81.38683, 13.40564]]
     ];
 
     const marcadores = [];
+    const coordenadasSeleccionadas = new Map();
 
     function limpiarMarcadores() {
-      marcadores.forEach(m => m.remove());
+      marcadores.forEach(m => m.marker.remove());
       marcadores.length = 0;
+      coordenadasSeleccionadas.clear();
+      document.getElementById("saveButton").disabled = true;
     }
 
     function generarCoordenadas() {
       limpiarMarcadores();
       const salida = [];
 
-      // Generar 6 coordenadas aleatorias (pueden ser de cualquier zona)
       for (let i = 0; i < 6; i++) {
         const zona = zonas[Math.floor(Math.random() * zonas.length)];
-
         const lons = zona.map(p => p[0]);
         const lats = zona.map(p => p[1]);
-        const minLon = Math.min(...lons);
-        const maxLon = Math.max(...lons);
-        const minLat = Math.min(...lats);
-        const maxLat = Math.max(...lats);
+        const lon = Math.min(...lons) + Math.random() * (Math.max(...lons) - Math.min(...lons));
+        const lat = Math.min(...lats) + Math.random() * (Math.max(...lats) - Math.min(...lats));
 
-        const lon = minLon + Math.random() * (maxLon - minLon);
-        const lat = minLat + Math.random() * (maxLat - minLat);
-
-        // Crear marcador con número
-        const el = document.createElement('div');
-        el.className = 'marker-label';
+        const el = document.createElement("div");
+        el.className = "marker-label";
         el.textContent = i + 1;
 
-        new mapboxgl.Marker(el).setLngLat([lon, lat]).addTo(map);
-        marcadores.push(el);
+        const marker = new mapboxgl.Marker(el).setLngLat([lon, lat]).addTo(map);
+        el.addEventListener("click", () => {
+          el.classList.toggle("selected");
+          const id = i + 1;
+          if (el.classList.contains("selected")) coordenadasSeleccionadas.set(id, { id, lat, lon });
+          else coordenadasSeleccionadas.delete(id);
+          document.getElementById("saveButton").disabled = coordenadasSeleccionadas.size === 0;
+        });
 
+        marcadores.push({ marker, element: el, coords: { lat, lon } });
         salida.push(`#${i + 1}: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`);
       }
 
-      document.getElementById('output').textContent = salida.join("\n");
-
-      // Centrar el mapa (promedio de coordenadas)
-      const coords = salida.map(line => {
-        const [lat, lon] = line.match(/-?\d+\.\d+/g).map(Number);
-        return [lon, lat];
-      });
-      const avgLon = coords.reduce((s, c) => s + c[0], 0) / coords.length;
-      const avgLat = coords.reduce((s, c) => s + c[1], 0) / coords.length;
-      map.flyTo({ center: [avgLon, avgLat], zoom: 5 });
+      document.getElementById("output").textContent = salida.join("\n");
     }
 
-    document.getElementById('generar').addEventListener('click', generarCoordenadas);
+    document.getElementById("generar").addEventListener("click", generarCoordenadas);
+
+    document.getElementById("saveButton").addEventListener("click", async () => {
+      try {
+        const coordsToSave = Array.from(coordenadasSeleccionadas.values()).map(coord => ({
+          Latitud: coord.lat,
+          Longitud: coord.lon,
+          Fecha: new Date().toISOString()
+        }));
+
+        const { error } = await client.from("Coordenadas").insert(coordsToSave);
+        if (error) alert("Error al guardar: " + error.message);
+        else {
+          alert("Coordenadas guardadas correctamente.");
+          marcadores.forEach(m => m.element.classList.remove("selected"));
+          coordenadasSeleccionadas.clear();
+          document.getElementById("saveButton").disabled = true;
+        }
+      } catch (error) {
+        alert("Error al guardar las coordenadas: " + error.message);
+      }
+    });
   </script>
 </body>
 </html>
+
