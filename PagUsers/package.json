@@ -1,0 +1,15 @@
+{
+  "name": "map-service",
+  "version": "1.0.0",
+  "description": "Microservicio para visualizar coordenadas aleatorias con Mapbox",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

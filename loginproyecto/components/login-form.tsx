@@ -33,64 +33,54 @@ export function LoginForm({
     setError(null);
 
     try {
-      console.log('Iniciando proceso de login...');
-      
+      console.log("Iniciando proceso de login...");
+
       // Iniciar sesión
-      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      
-      console.log('Respuesta de signIn:', { data: signInData, error: signInError });
-      
-      if (signInError) {
-        console.error('Error en signIn:', signInError);
-        throw signInError;
-      }
-      
-      if (!signInData?.session) {
-        console.error('No hay sesión en la respuesta');
-        throw new Error("No se pudo iniciar sesión");
-      }
+      const { data: signInData, error: signInError } =
+        await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+      if (signInError) throw signInError;
+      if (!signInData?.session) throw new Error("No se pudo iniciar sesión");
 
       const userId = signInData.session.user.id;
-      console.log('ID de usuario:', userId);
+      console.log("ID de usuario:", userId);
 
-      // Verificar si el usuario es administrador
-      const { data: adminCheck, error: checkError } = await supabase
-        .from('usuarios')
-        .select('tipo')
-        .eq('id', userId)
+      // Consultar tipo de usuario
+      const { data: userCheck, error: checkError } = await supabase
+        .from("usuarios")
+        .select("tipo")
+        .eq("id", userId)
         .single();
 
-      console.log('Consulta de tipo de usuario:', { data: adminCheck, error: checkError });
+      if (checkError) throw checkError;
+      if (!userCheck) throw new Error("Usuario no encontrado en el sistema");
 
-      if (checkError) {
-        console.error('Error al verificar tipo de usuario:', checkError);
-        throw checkError;
-      }
-
-      if (!adminCheck) {
-        console.error('No se encontró el usuario en la tabla usuarios');
-        throw new Error('Usuario no encontrado en el sistema');
-      }
-
-      console.log('Tipo de usuario:', adminCheck.tipo);
-
-      if (adminCheck.tipo !== 'admin') {
-        throw new Error('Acceso denegado: No tienes permisos de administrador');
-      }
-
-      // Redirigir a la página de administración con el token
+      const tipoUsuario = userCheck.tipo?.toLowerCase();
       const token = signInData.session.access_token;
-      console.log('Redirigiendo con token...');
-      window.location.href = `http://localhost:3001?token=${token}`;
+
+      console.log("Tipo de usuario detectado:", tipoUsuario);
+
+      // 🔹 Redirigir según el tipo de usuario
+      if (tipoUsuario === "admin") {
+        console.log("Redirigiendo a puerto 3001 (admin)...");
+        window.location.href = `http://localhost:3001?token=${token}`;
+      } else {
+        console.log("Redirigiendo a puerto 3002 (usuario)...");
+        window.location.href = `http://localhost:3002?token=${token}`;
+      }
+
     } catch (error: unknown) {
-      console.error('Error completo:', error);
-      setError(error instanceof Error ? error.message : 
-        error && typeof error === 'object' && 'message' in error 
-          ? (error as { message: string }).message 
-          : "Error desconocido");
+      console.error("Error completo:", error);
+      setError(
+        error instanceof Error
+          ? error.message
+          : typeof error === "object" && error && "message" in error
+          ? (error as { message: string }).message
+          : "Error desconocido"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -154,3 +144,4 @@ export function LoginForm({
     </div>
   );
 }
+
