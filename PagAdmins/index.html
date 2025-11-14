@@ -12,226 +12,126 @@
   <!-- Supabase -->
   <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
 
-  <style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #eef2ef; }
-    #map { width: 100%; height: 90vh; border-radius: 10px; margin-top: 8px; }
-    #panel {
-      background: white; padding: 10px; margin: 10px;
-      border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-    }
-    button {
-      background-color: #00695c; color: white; border: none;
-      padding: 8px 14px; border-radius: 6px; cursor: pointer;
-    }
-    button:hover { background-color: #004d40; }
-    button:disabled { background-color: #cccccc; cursor: not-allowed; }
-    pre { background: #e8f5e9; padding: 8px; border-radius: 5px; }
-    .marker-label {
-      background-color: #2e7d32;
-      color: white;
-      border-radius: 50%;
-      width: 24px;
-      height: 24px;
-      text-align: center;
-      line-height: 24px;
-      font-weight: bold;
-      border: 2px solid white;
-      cursor: pointer;
-    }
-    .marker-label.selected {
-      background-color: #d32f2f;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <div id="panel">
-    <div id="userInfo" style="margin-bottom: 10px; font-weight: bold;"></div>
+    <div id="userInfo" style="margin-bottom: 0; font-weight: bold;"></div>
+
     <button id="generar" style="display: none;">Generar 6 coordenadas aleatorias</button>
     <button id="saveButton" disabled style="display: none;">Guardar Coordenadas</button>
-    <pre id="output"></pre>
+    
+    <!-- Dropdown Menu -->
+    <div class="dropdown-container">
+      <button id="dropdownBtn" style="display: none;">Opciones</button>
+      <div id="dropdownMenu" class="dropdown-menu">
+        <a href="#" id="verTabla">Ver tabla de coordenadas</a>
+        <a href="#" id="registroBtn" style="display: none;">Registrar nuevo usuario</a>
+      </div>
+    </div>
   </div>
+
+  <pre id="output"></pre>
   <div id="map"></div>
 
-  <script>
-    // --- CONFIGURACIÓN SUPABASE ---
-    const supabaseUrl = 'https://mukghsrmrtjfuesfiine.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im11a2doc3JtcnRqZnVlc2ZpaW5lIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MTc3NjEsImV4cCI6MjA3Mzk5Mzc2MX0.UHsI7kQG1qFDx5xrbH6nrSeNAmv7-tnDDjcgEt7Ylus';
-    const client = supabase.createClient(supabaseUrl, supabaseKey);
+  <!-- Modal para ver coordenadas -->
+  <div id="coordinatesModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Coordenadas Guardadas</h2>
+        <button class="close-btn" id="closeModal">&times;</button>
+      </div>
 
-    // --- FUNCIÓN PARA VERIFICAR TOKEN JWT CON SUPABASE ---
-    async function verificarToken(token) {
-      try {
-        console.log('Verificando token...');
-        const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "apikey": supabaseKey
-          }
-        });
+      <div id="tableContainer">
+        <table class="coordinates-table" id="coordinatesTable">
+          <thead>
+            <tr>
+              <th>Seleccionar</th>
+              <th>#</th>
+              <th>Latitud</th>
+              <th>Longitud</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Se llenará dinámicamente -->
+          </tbody>
+        </table>
+      </div>
 
-        if (!response.ok) {
-          console.error('Error en la respuesta:', response.status);
-          throw new Error("Token inválido o expirado");
-        }
+      <!-- Formulario para crear conglomerado -->
+      <div id="conglomeradoForm" class="conglomerado-form">
+        <h3>Crear Conglomerado</h3>
+        <div class="form-group">
+          <label for="fechaInicio">Fecha de Inicio:</label>
+          <input type="date" id="fechaInicio" required />
+        </div>
+        <div class="form-group">
+          <label for="descripcion">Descripción:</label>
+          <textarea id="descripcion" placeholder="Ingrese una descripción" required></textarea>
+        </div>
+        <div class="form-group">
+          <label for="usuarioSelect">Usuario:</label>
+          <select id="usuarioSelect" required>
+            <option value="">Seleccione un usuario</option>
+          </select>
+        </div>
+        <button id="guardarConglomerado" class="btn-guardar">Guardar Conglomerado</button>
+      </div>
+    </div>
+  </div>
 
-        const user = await response.json();
-        console.log('Usuario verificado:', user);
-        return user;
-      } catch (error) {
-        console.error('Error al verificar token:', error);
-        throw error;
-      }
-    }
+  <!-- Modal para registrar nuevo usuario -->
+  <div id="registroModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Registrar Nuevo Usuario</h2>
+        <button class="close-btn" id="closeRegistroModal">&times;</button>
+      </div>
 
-    // --- VERIFICAR USUARIO POR TOKEN ---
-    async function verificarUsuarioPorToken() {
-      const userInfoElement = document.getElementById('userInfo');
-      const generarButton = document.getElementById('generar');
-      const saveButton = document.getElementById('saveButton');
-      
-      try {
-        console.log('Iniciando verificación...');
-        const params = new URLSearchParams(window.location.search);
-        const token = params.get("token");
-        console.log('Token encontrado en URL:', token ? 'Sí' : 'No');
-        
-        if (!token) throw new Error("Token no encontrado en la URL");
+      <div id="registroFormContainer">
+        <form id="formularioRegistroAdmin">
+          <div class="form-group">
+            <label for="emailRegistro">Correo Electrónico:</label>
+            <input type="email" id="emailRegistro" name="emailRegistro" placeholder="ejemplo@correo.com" required />
+          </div>
 
-        // Crear cliente autenticado
-        const authenticatedClient = supabase.createClient(supabaseUrl, supabaseKey, {
-          auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false
-          },
-          global: {
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }
-        });
+          <div class="form-group">
+            <label for="nombreRegistro">Nombre Completo:</label>
+            <input type="text" id="nombreRegistro" name="nombreRegistro" placeholder="Nombre completo" required />
+          </div>
 
-        // Obtener datos del usuario
-        const { data: { user }, error: userError } = await authenticatedClient.auth.getUser();
-        console.log("Respuesta de auth.getUser:", { user, error: userError });
-        
-        if (userError) throw userError;
-        if (!user) throw new Error("No se pudo obtener el usuario");
+          <div class="form-group">
+            <label for="tipoRegistro">Tipo de Usuario:</label>
+            <select id="tipoRegistro" name="tipoRegistro" required>
+              <option value="">Seleccione un tipo</option>
+              <option value="admin">Administrador</option>
+              <option value="usuario">Usuario</option>
+            </select>
+          </div>
 
-        // Buscar rol en tabla usuarios usando el cliente autenticado
-        const { data: perfil, error } = await authenticatedClient
-          .from("usuarios")
-          .select("Correo, tipo")
-          .eq("id", user.id)
-          .single();
-        
-        console.log("Datos de perfil:", perfil, "Error:", error);
+          <div class="form-group">
+            <label for="passwordRegistro">Contraseña:</label>
+            <input type="password" id="passwordRegistro" name="passwordRegistro" placeholder="Ingrese una contraseña" required />
+          </div>
 
-        if (error) throw error;
+          <button type="submit" class="btn-guardar">Registrar Usuario</button>
+          <span class="error" id="errorRegistro"></span>
+          <span class="success" id="successRegistro"></span>
+        </form>
+      </div>
+    </div>
+  </div>
 
-        if (perfil.tipo === "admin") {
-          userInfoElement.textContent = `✅ Bienvenido administrador (${perfil.Correo})`;
-          generarButton.style.display = "inline-block";
-          saveButton.style.display = "inline-block";
-        } else {
-          userInfoElement.textContent = `🚫 Acceso denegado (${perfil.tipo})`;
-          map.dragPan.disable();
-          map.scrollZoom.disable();
-          map.boxZoom.disable();
-          map.touchZoomRotate.disable();
-          setTimeout(() => window.location.href = "http://localhost:3000/auth/login", 2500);
-        }
-      } catch (err) {
-        console.error("Error al verificar usuario:", err);
-        document.getElementById("userInfo").textContent =
-          "⚠️ Sesión inválida o expirada. Redirigiendo...";
-        setTimeout(() => window.location.href = "http://localhost:3000/auth/login", 2000);
-      }
-    }
-
-    // --- MAPBOX CONFIG ---
-    mapboxgl.accessToken = 'pk.eyJ1Ijoibm90ZWUwMDEiLCJhIjoiY21naWh5NHlpMDlpejJxcHU1Nm41b3RyaCJ9.PFvWLe45FTx6XXJqYcpq0A';
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-74, 4.5],
-      zoom: 4.5
-    });
-
-    map.on('load', verificarUsuarioPorToken);
-
-    // --- ZONAS GEOGRÁFICAS ---
-    const zonas = [
-      [[-69.94783, -4.22671], [-79.25914, 1.07880], [-77.63382, 9.12124], [-70.82115, 12.55210]],
-      [[-72.02043, 7.03256], [-67.27637, 6.34109], [-66.84027, 1.21853], [-69.82685, -4.13150]],
-      [[-81.74912, 12.48359], [-81.72282, 12.47914], [-81.68144, 12.58151], [-81.70178, 12.61299]],
-      [[-81.40236, 13.32037], [-81.36602, 13.31578], [-81.33161, 13.38948], [-81.38683, 13.40564]]
-    ];
-
-    const marcadores = [];
-    const coordenadasSeleccionadas = new Map();
-
-    function limpiarMarcadores() {
-      marcadores.forEach(m => m.marker.remove());
-      marcadores.length = 0;
-      coordenadasSeleccionadas.clear();
-      document.getElementById("saveButton").disabled = true;
-    }
-
-    function generarCoordenadas() {
-      limpiarMarcadores();
-      const salida = [];
-
-      for (let i = 0; i < 6; i++) {
-        const zona = zonas[Math.floor(Math.random() * zonas.length)];
-        const lons = zona.map(p => p[0]);
-        const lats = zona.map(p => p[1]);
-        const lon = Math.min(...lons) + Math.random() * (Math.max(...lons) - Math.min(...lons));
-        const lat = Math.min(...lats) + Math.random() * (Math.max(...lats) - Math.min(...lats));
-
-        const el = document.createElement("div");
-        el.className = "marker-label";
-        el.textContent = i + 1;
-
-        const marker = new mapboxgl.Marker(el).setLngLat([lon, lat]).addTo(map);
-        el.addEventListener("click", () => {
-          el.classList.toggle("selected");
-          const id = i + 1;
-          if (el.classList.contains("selected")) coordenadasSeleccionadas.set(id, { id, lat, lon });
-          else coordenadasSeleccionadas.delete(id);
-          document.getElementById("saveButton").disabled = coordenadasSeleccionadas.size === 0;
-        });
-
-        marcadores.push({ marker, element: el, coords: { lat, lon } });
-        salida.push(`#${i + 1}: Lat ${lat.toFixed(5)}, Lon ${lon.toFixed(5)}`);
-      }
-
-      document.getElementById("output").textContent = salida.join("\n");
-    }
-
-    document.getElementById("generar").addEventListener("click", generarCoordenadas);
-
-    document.getElementById("saveButton").addEventListener("click", async () => {
-      try {
-        const coordsToSave = Array.from(coordenadasSeleccionadas.values()).map(coord => ({
-          Latitud: coord.lat,
-          Longitud: coord.lon,
-          Fecha: new Date().toISOString()
-        }));
-
-        const { error } = await client.from("Coordenadas").insert(coordsToSave);
-        if (error) alert("Error al guardar: " + error.message);
-        else {
-          alert("Coordenadas guardadas correctamente.");
-          marcadores.forEach(m => m.element.classList.remove("selected"));
-          coordenadasSeleccionadas.clear();
-          document.getElementById("saveButton").disabled = true;
-        }
-      } catch (error) {
-        alert("Error al guardar las coordenadas: " + error.message);
-      }
-    });
-  </script>
+  <!-- Scripts -->
+  <script src="config.js"></script>
+  <script src="utils.js"></script>
+  <script src="coordinates.js"></script>
+  <script src="conglomerados.js"></script>
+  <script src="registro-admin.js"></script>
+  <script src="app.js"></script>  
+  
 </body>
 </html>
+
 

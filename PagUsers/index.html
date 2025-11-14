@@ -4,115 +4,100 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conglomerados</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #eaf4e1;
-            margin: 0;
-            padding: 20px;
-        }
-
-        .container {
-            background-color: #d9ead3;
-            border-radius: 8px;
-            padding: 20px;
-        }
-
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .header button {
-            background-color: #ccc;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            font-size: 20px;
-            cursor: pointer;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background-color: #e0e0e0;
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        .card p {
-            margin: 8px 0;
-            font-weight: bold;
-        }
-
-        .dropdown {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .dropdown span {
-            font-weight: bold;
-        }
-
-        .dropdown::after {
-            content: "▼";
-            font-size: 10px;
-        }
-    </style>
+    <!-- Mapbox -->
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.js"></script>
+    <link href="https://api.mapbox.com/mapbox-gl-js/v2.15.0/mapbox-gl.css" rel="stylesheet" />
+    <!-- Supabase -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <button>-</button>
-            <h3>Conglomerados</h3>
-        </div>
+    <!-- Vista de Conglomerados -->
+    <div id="conglomeradosView" style="display: none;">
+        <div class="container">
+            <div id="userInfo" style="margin-bottom: 15px; font-weight: bold;"></div>
 
-        <div class="grid">
-            <div class="card">
-                <p>Ubicación</p>
-                <p>Brigada</p>
-                <div class="dropdown"><span>Descripción</span></div>
+            <div class="header">
+                <button id="logoutBtn">↪</button>
+                <h3>Conglomerados</h3>
             </div>
 
-            <div class="card">
-                <p>Ubicación</p>
-                <p>Brigada</p>
-                <div class="dropdown"><span>Descripción</span></div>
-            </div>
-
-            <div class="card">
-                <p>Ubicación</p>
-                <p>Brigada</p>
-                <div class="dropdown"><span>Descripción</span></div>
-            </div>
-
-            <div class="card">
-                <p>Ubicación</p>
-                <p>Brigada</p>
-                <div class="dropdown"><span>Descripción</span></div>
-            </div>
-
-            <div class="card">
-                <p>Ubicación</p>
-                <p>Brigada</p>
-                <div class="dropdown"><span>Descripción</span></div>
-            </div>
-
-            <div class="card">
-                <p>Ubicación</p>
-                <p>Brigada</p>
-                <div class="dropdown"><span>Descripción</span></div>
+            <pre id="output"></pre>
+            <div id="loading" class="loading" style="display: none;">Cargando conglomerados...</div>
+            <div class="grid" id="grid">
+                <!-- Se llenará dinámicamente -->
             </div>
         </div>
     </div>
+
+    <!-- Vista de Registro -->
+    <div id="registroView" style="display: none;">
+        <div class="registro-container">
+            <h1>Completar Registro</h1>
+            <p class="info-text">Por favor completa tu perfil para continuar</p>
+            
+            <form id="registroForm">
+                <!-- Roles Múltiples -->
+                <div class="form-group">
+                    <label>Selecciona tus Roles:</label>
+                    <div class="rol-checkboxes">
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="rol-checkbox" value="Jefe de brigada" />
+                            Jefe de brigada
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="rol-checkbox" value="Botanico" />
+                            Botánico
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="rol-checkbox" value="Tecnico auxiliar" />
+                            Técnico auxiliar
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" class="rol-checkbox" value="Coinvestigador" />
+                            Coinvestigador
+                        </label>
+                    </div>
+                    <span class="error" id="errorRol"></span>
+                </div>
+
+                <!-- Ubicación con Mapa -->
+                <div class="form-group">
+                    <label>Ubicación (Latitud y Longitud):</label>
+                    <button type="button" class="map-button" id="btnObtenerUbicacion">📍 Obtener ubicación actual</button>
+                    <div id="map"></div>
+                    <div class="map-info">
+                        Haz clic en el mapa para seleccionar una ubicación o usa el botón de arriba
+                    </div>
+                    <div class="ubicacion-section">
+                        <div>
+                            <label for="latitud">Latitud:</label>
+                            <input type="number" id="latitud" name="latitud" step="0.000001" placeholder="Latitud" required />
+                            <span class="error" id="errorLatitud"></span>
+                        </div>
+                        <div>
+                            <label for="longitud">Longitud:</label>
+                            <input type="number" id="longitud" name="longitud" step="0.000001" placeholder="Longitud" required />
+                            <span class="error" id="errorLongitud"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones -->
+                <div class="button-group">
+                    <button type="submit">Registrarse</button>
+                    <button type="button" id="btnLogout" class="btn-logout">Cerrar Sesión</button>
+                </div>
+
+                <span class="error" id="errorGeneral"></span>
+                <span class="success" id="successMessage"></span>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="utils.js"></script>
+    <script src="registro.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>

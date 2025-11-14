@@ -21,9 +21,6 @@ export async function AuthButton() {
       <Button asChild size="sm" variant={"outline"}>
         <Link href="/auth/login">Iniciar Sesión</Link>
       </Button>
-      <Button asChild size="sm" variant={"default"}>
-        <Link href="/auth/sign-up">Registrate</Link>
-      </Button>
     </div>
   );
 }

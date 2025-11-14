@@ -63,7 +63,6 @@ export function LoginForm({
 
       console.log("Tipo de usuario detectado:", tipoUsuario);
 
-      // 🔹 Redirigir según el tipo de usuario
       if (tipoUsuario === "admin") {
         console.log("Redirigiendo a puerto 3001 (admin)...");
         window.location.href = `http://localhost:3001?token=${token}`;

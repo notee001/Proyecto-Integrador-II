@@ -1,0 +1,337 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #eaf4e1;
+}
+
+.container {
+    background-color: #d9ead3;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 20px;
+}
+
+#userInfo {
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: #333;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.header button {
+    background-color: #ccc;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.card {
+    background-color: #e0e0e0;
+    border-radius: 10px;
+    padding: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.card p {
+    margin: 8px 0;
+    font-weight: bold;
+}
+
+.card-fecha {
+    color: #666;
+    font-size: 12px;
+}
+
+.dropdown {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #999;
+    cursor: pointer;
+}
+
+.dropdown span {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.dropdown::after {
+    content: "▼";
+    font-size: 10px;
+    transition: transform 0.3s;
+}
+
+.dropdown.active::after {
+    transform: rotate(180deg);
+}
+
+.descripcion {
+    display: none;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #999;
+    font-size: 13px;
+    color: #333;
+}
+
+.descripcion.active {
+    display: block;
+}
+
+.empty-message {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-size: 16px;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+#output {
+    color: red;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
+/* Estilos para Registro */
+.registro-container {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+    padding: 40px;
+    max-width: 600px;
+    width: 100%;
+    margin: 40px auto;
+}
+
+.registro-container h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 10px;
+}
+
+.info-text {
+    text-align: center;
+    color: #666;
+    margin-bottom: 30px;
+    font-size: 14px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #333;
+    font-weight: bold;
+}
+
+input[type="text"],
+input[type="number"] {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 14px;
+    font-family: Arial, sans-serif;
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+}
+
+.rol-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.rol-btn {
+    padding: 12px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    font-size: 13px;
+}
+
+.rol-btn:hover {
+    border-color: #667eea;
+    color: #667eea;
+}
+
+.rol-btn.selected {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.rol-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    border: 2px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.checkbox-label:hover {
+    border-color: #667eea;
+    background-color: #f0f0f0;
+}
+
+.checkbox-label input[type="checkbox"] {
+    margin-right: 8px;
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.checkbox-label input[type="checkbox"]:checked + {
+    color: #667eea;
+    font-weight: bold;
+}
+
+.ubicacion-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.ubicacion-section input {
+    margin: 0;
+}
+
+#map {
+    width: 100%;
+    height: 350px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    border: 2px solid #ddd;
+}
+
+.map-info {
+    background: #f0f0f0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    font-size: 13px;
+    color: #666;
+}
+
+.map-button {
+    background: #667eea;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 13px;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.map-button:hover {
+    background: #5568d3;
+}
+
+.button-group {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 30px;
+}
+
+button[type="submit"],
+.btn-logout {
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+button[type="submit"] {
+    background: #667eea;
+    color: white;
+}
+
+button[type="submit"]:hover {
+    background: #5568d3;
+}
+
+.btn-logout {
+    background: #ddd;
+    color: #333;
+}
+
+.btn-logout:hover {
+    background: #ccc;
+}
+
+.error {
+    color: red;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.success {
+    color: green;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+input[type="hidden"] {
+    display: none;
+}

@@ -1,0 +1,302 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eef2ef;
+}
+
+#map {
+  width: 100%;
+  height: 90vh;
+  border-radius: 10px;
+  margin-top: 8px;
+}
+
+#panel {
+  background: white;
+  padding: 10px;
+  margin: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+button {
+  background-color: #00695c;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #004d40;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+pre {
+  background: #e8f5e9;
+  padding: 8px;
+  border-radius: 5px;
+}
+
+.marker-label {
+  background-color: #2e7d32;
+  color: white;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  text-align: center;
+  line-height: 24px;
+  font-weight: bold;
+  border: 2px solid white;
+  cursor: pointer;
+}
+
+.marker-label.selected {
+  background-color: #d32f2f;
+}
+
+/* Dropdown */
+.dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  background-color: #f9f9f9;
+  min-width: 200px;
+  box-shadow: 0px 8px 16px rgba(0,0,0,0.2);
+  padding: 12px 16px;
+  z-index: 1;
+  border-radius: 6px;
+  top: 100%;
+  left: 0;
+  margin-top: 5px;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-menu a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+  cursor: pointer;
+  border-radius: 4px;
+  margin: -12px -16px;
+}
+
+.dropdown-menu a:hover {
+  background-color: #e0f2f1;
+}
+
+/* Modal */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0,0,0,0.4);
+}
+
+.modal.show {
+  display: block;
+}
+
+.modal-content {
+  background-color: #fefefe;
+  margin: 5% auto;
+  padding: 20px;
+  border-radius: 8px;
+  width: 90%;
+  max-width: 1000px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 10px;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #00695c;
+}
+
+.close-btn {
+  font-size: 28px;
+  font-weight: bold;
+  color: #aaa;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.close-btn:hover {
+  color: #000;
+  background: none;
+}
+
+/* Tabla */
+.coordinates-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.coordinates-table th {
+  background-color: #00695c;
+  color: white;
+  padding: 12px;
+  text-align: left;
+  font-weight: bold;
+}
+
+.coordinates-table td {
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.coordinates-table tr:hover {
+  background-color: #f5f5f5;
+}
+
+.coordinates-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.coordinates-table th:first-child,
+.coordinates-table td:first-child {
+  text-align: center;
+  width: 50px;
+}
+
+.coordinates-table input[type="checkbox"] {
+  cursor: pointer;
+  width: 18px;
+  height: 18px;
+}
+
+#userInfo {
+  flex: 1;
+}
+
+#output {
+  display: none;
+}
+
+/* Conglomerado Form */
+.conglomerado-form {
+  margin-top: 30px;
+  padding: 20px;
+  border-top: 2px solid #ddd;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.conglomerado-form h3 {
+  margin-top: 0;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.btn-guardar {
+  background-color: #4CAF50;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.btn-guardar:hover {
+  background-color: #45a049;
+}
+
+.btn-guardar:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+/* Registro Modal */
+#registroModal .form-group {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+#registroModal .form-group label {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #333;
+}
+
+#registroModal .form-group input,
+#registroModal .form-group select {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: Arial, sans-serif;
+}
+
+#registroModal .error {
+  color: red;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+#registroModal .success {
+  color: green;
+  font-size: 12px;
+  margin-top: 5px;
+}
