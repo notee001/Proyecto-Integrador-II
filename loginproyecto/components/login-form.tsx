@@ -52,8 +52,9 @@ export function LoginForm({
       const { data: userCheck, error: checkError } = await supabase
         .from("usuarios")
         .select("tipo")
-        .eq("id", userId)
-        .single();
+        .eq("Correo", email)
+        .maybeSingle();
+
 
       if (checkError) throw checkError;
       if (!userCheck) throw new Error("Usuario no encontrado en el sistema");
@@ -72,7 +73,12 @@ export function LoginForm({
       }
 
     } catch (error: unknown) {
-      console.error("Error completo:", error);
+      if (error instanceof Error) {
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
+      } else {
+        console.error("Error details:", JSON.stringify(error, null, 2));
+      }
       setError(
         error instanceof Error
           ? error.message
