@@ -137,12 +137,6 @@ export function LoginForm({
                 {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
               </Button>
             </div>
-            <div className="mt-4 text-center text-sm">
-              ¿No tienes una cuenta?{" "}
-              <Link href="/auth/sign-up" className="underline underline-offset-4">
-                Regístrate
-              </Link>
-            </div>
           </form>
         </CardContent>
       </Card>

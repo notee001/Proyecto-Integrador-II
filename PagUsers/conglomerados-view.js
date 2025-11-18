@@ -1,6 +1,5 @@
 async function cargarDatosUsuarioYConglomerados() {
   try {
-    // 1. Obtener sesión activa
     const { data: { session }, error } = await supabase.auth.getSession();
     if (error || !session) {
       console.log("No hay sesión");
@@ -10,7 +9,7 @@ async function cargarDatosUsuarioYConglomerados() {
     const emailUsuario = session.user.email;
     console.log("Correo autenticado:", emailUsuario);
 
-    // 2. Buscar usuario por CORREO en tu tabla
+    // Buscar el usuario dentro de la tabla
     const { data: usuario, error: errorUsuario } = await supabase
       .from("usuarios")
       .select("*")
@@ -24,11 +23,13 @@ async function cargarDatosUsuarioYConglomerados() {
 
     console.log("Usuario encontrado:", usuario);
 
-    // 3. Cargar conglomerados usando tu ID interno
+    // Cargar conglomerados donde participa en cualquiera de las columnas
     const { data: conglomerados, error: errorConglo } = await supabase
       .from("Conglomerados")
-      .select("*")
-      .eq("Usuario", usuario.id); // tu ID propio
+      .select("id, IDCoor, Fecha_Inicio, Descripción, Usuario1, Usuario2, Usuario3, Usuario4")
+      .or(
+        `Usuario1.eq.${usuario.id},Usuario2.eq.${usuario.id},Usuario3.eq.${usuario.id},Usuario4.eq.${usuario.id}`
+      );
 
     if (errorConglo) {
       console.log("Error cargando conglomerados", errorConglo);

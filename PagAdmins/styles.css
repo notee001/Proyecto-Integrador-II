@@ -300,3 +300,38 @@ pre {
   font-size: 12px;
   margin-top: 5px;
 }
+
+/* Roles Checkboxes */
+.roles-checkboxes {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.checkbox-role {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  border: 2px solid #ddd;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.checkbox-role:hover {
+  border-color: #667eea;
+  background-color: #f0f0f0;
+}
+
+.checkbox-role input[type="checkbox"] {
+  margin-right: 8px;
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+.checkbox-role input[type="checkbox"]:checked + label {
+  color: #667eea;
+  font-weight: bold;
+}

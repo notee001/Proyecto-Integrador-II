@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     e.preventDefault();
     console.log('Abriendo modal de coordenadas');
     document.getElementById('coordinatesModal').style.display = 'block';
-    await cargarUsuariosEnSelect();
+    await cargarUsuariosParaConglomerados();
     await coordinatesManager.cargarCoordenadas();
   });
 
@@ -85,6 +85,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
 
+  // Botón Cerrar sesión
+  const logoutLink = document.getElementById("logoutLink");
+  if (logoutLink) {
+    logoutLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      if (confirm('¿Deseas cerrar sesión?')) {
+        cerrarSesion();
+      }
+    });
+  }
+
   // Cerrar modal
   document.getElementById('closeModal').addEventListener('click', () => {
     document.getElementById('coordinatesModal').style.display = 'none';
@@ -94,12 +105,18 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('guardarConglomerado').addEventListener('click', async () => {
     const fechaInicio = document.getElementById('fechaInicio').value;
     const descripcion = document.getElementById('descripcion').value;
-    const usuarioId = document.getElementById('usuarioSelect').value;
+    const usuario1 = document.getElementById('usuarioJefe').value;
+    const usuario2 = document.getElementById('usuarioBotanico').value;
+    const usuario3 = document.getElementById('usuarioTecnico').value;
+    const usuario4 = document.getElementById('usuarioCoinvestigador').value;
 
-    if (!fechaInicio || !descripcion || !usuarioId) {
-      alert('Por favor completa todos los campos');
+    if (!fechaInicio || !descripcion || !usuario1 || !usuario2 || !usuario3 || !usuario4) {
+      alert('Por favor completa todos los campos y selecciona todos los roles');
       return;
     }
+
+    const usuarios = [usuario1, usuario2, usuario3, usuario4];
+
 
     // Obtener IDs de coordenadas seleccionadas con checkbox
     const coordinatesIds = Array.from(document.querySelectorAll('#tableBody tr'))
@@ -109,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
     console.log('Coordenadas seleccionadas:', coordinatesIds);
 
-    const success = await guardarConglomerado(fechaInicio, descripcion, usuarioId, coordinatesIds);
+    const success = await guardarConglomerado(fechaInicio, descripcion, usuarios, coordinatesIds);
     
     if (success) {
       // Limpiar formulario
@@ -127,3 +144,54 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 });
+
+async function cargarUsuariosParaConglomerados() {
+  try {
+    const fechaInicio = document.getElementById('fechaInicio').value;
+    const latitud = 4.5; // Coordenada por defecto, se actualizará cuando se seleccione
+    const longitud = -75.5;
+
+    // Cargar usuarios para cada rol
+    const rolesRequeridos = [
+      'Jefe de brigada',
+      'Botanico',
+      'Tecnico auxiliar',
+      'Coinvestigador'
+    ];
+
+    const usuariosPorRol = {};
+
+    for (const rol of rolesRequeridos) {
+      const usuarios = await obtenerUsuariosDisponibles(rol, latitud, longitud, fechaInicio);
+      usuariosPorRol[rol] = usuarios;
+    }
+
+    // Llenar selectores
+    const rolSelectores = {
+      'Jefe de brigada': 'usuarioJefe',
+      'Botanico': 'usuarioBotanico',
+      'Tecnico auxiliar': 'usuarioTecnico',
+      'Coinvestigador': 'usuarioCoinvestigador'
+    };
+
+    for (const [rol, selectId] of Object.entries(rolSelectores)) {
+      const select = document.getElementById(selectId);
+      if (select) {
+        select.innerHTML = '<option value="">Seleccione un usuario</option>';
+        
+        if (usuariosPorRol[rol]) {
+          usuariosPorRol[rol].forEach(usuario => {
+            const option = document.createElement('option');
+            option.value = usuario.id;
+            option.textContent = `${usuario.Nombre} (${(usuario.distancia || 0).toFixed(2)} km)`;
+            select.appendChild(option);
+          });
+        }
+      }
+    }
+
+    console.log('Usuarios cargados para conglomerados:', usuariosPorRol);
+  } catch (error) {
+    console.error('Error al cargar usuarios:', error);
+  }
+}

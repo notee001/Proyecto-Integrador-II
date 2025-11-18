@@ -114,16 +114,22 @@ async function cargarYMostrarConglomerados(idUsuario, emailUsuario) {
 
     // === CONSULTA A SUPABASE ===
     const { data, error } = await supabase
-        .from("Conglomerados")
-        .select(`
-            id,
-            IDCoor,
-            Fecha_Inicio,
-            Descripción,
-            Usuario,
-            Coordenadas:IDCoor(id, Latitud, Longitud)
-        `)
-        .eq("Usuario", idUsuario);
+      .from("Conglomerados")
+      .select(`
+          id,
+          IDCoor,
+          Fecha_Inicio,
+          Descripción,
+          Usuario1,
+          Usuario2,
+          Usuario3,
+          Usuario4,
+          Coordenadas:IDCoor(id, Latitud, Longitud)
+      `)
+      .or(
+          `Usuario1.eq.${idUsuario},Usuario2.eq.${idUsuario},Usuario3.eq.${idUsuario},Usuario4.eq.${idUsuario}`
+      );
+
 
     loading.style.display = "none";
 
